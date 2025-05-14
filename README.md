@@ -3,7 +3,16 @@ A robot that can play table tennis, our final project for Berkeley EECS 106A. Pl
 
 ## Installation
 
-Install ROS Kinetic and install `rosdep`. Then do
+Clone the project then move inside it. Then install required lib
+
+    sudo apt install ros-noetic-desktop-full
+    sudo apt install python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
+    sudo rosdep init
+    rosdep update
+    sudo apt install ros-noetic-gazebo-ros-pkgs ros-noetic-rviz ros-noetic-tf2-ros
+    pip install scipy numpy
+
+Then do
 
     rosdep install --from-paths src --ignore-src -r -y
 
