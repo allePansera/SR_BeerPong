@@ -336,7 +336,7 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
         while True:
-            pose_input = raw_input("Enter position or enter for last value {}: ".format(pose))
+            pose_input = input("Enter position or enter for last value {}: ".format(pose))
             if len(pose_input) > 0:
               try:
                   pose_input = pose_input.split(' ')
@@ -347,7 +347,7 @@ if __name__ == "__main__":
             break
         
         while True:
-            vel_input = raw_input("Enter xyz velocities or 'r' for random or enter for last value {}: ".format(vel))
+            vel_input = input("Enter xyz velocities or 'r' for random or enter for last value {}: ".format(vel))
             if vel_input == 'r':
                 x = round(random.uniform(-0.5, 0.5), 2)
                 y = round(random.uniform(2.0, 3.0), 2)

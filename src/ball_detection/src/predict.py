@@ -115,6 +115,17 @@ class EndPosVelPrediction:
 				fractional, integer = math.modf(t_initial + t)
 				pred_state.header.stamp.secs = int(integer)
 				pred_state.header.stamp.nsecs = fractional * 1e9
+				fractional, integer = math.modf(t_initial + t)
+				ros_time = t_initial + t
+				secs = int(ros_time)
+				nsecs = int(round((ros_time - secs) * 1e9))  # round to avoid float imprecision
+
+				# Handle nanosecond overflow
+				if nsecs >= 1e9:
+					secs += 1
+					nsecs -= int(1e9)
+				pred_state.header.stamp.secs = secs
+				pred_state.header.stamp.nsecs = nsecs
 				self.pub.publish(pred_state)
 				print("ball did not hit the table, might used estimated state after rebound")
 				print('goal position:', x_end, y_end, z_end, '\n')
@@ -143,6 +154,11 @@ class EndPosVelPrediction:
 			# NOTE: this method may fail if z end position is too close to the table, may need an offset (t_rb2 < t_rem - 0.2?)
 			
 			# Quadratic equation z_end - table_heigh - ball_radius = v_z t + .5 a * t^2
+			print("vz_out: ", vz_out)
+			print("z_end: ", z_end)
+			print("g: ", self.g)
+			print("table height: ", self.table_height)
+			print("ball radius: ", self.ball_radius)
 			discrim = math.sqrt(vz_out ** 2 + 2*self.g*(z_end - self.table_height - self.ball_radius))
 			time1, time2 = (-vz_out + discrim)/self.g, (-vz_out - discrim)/self.g
 			t_hit = None
@@ -184,11 +200,22 @@ class EndPosVelPrediction:
 		pred_state.vel.y = vy
 		pred_state.vel.z = vz_end
 		pred_state.hittable = True
-		pred_state.header.frame_id = 'world'
+		# pred_state.header.frame_id = 'world'
 		fractional, integer = math.modf(t_initial + t)
-		pred_state.header.stamp.secs = int(integer)
-		pred_state.header.stamp.nsecs = fractional * 1e9
-		
+		ros_time = t_initial + t
+		secs = int(ros_time)
+		nsecs = int(round((ros_time - secs) * 1e9))  # round to avoid float imprecision
+
+		# Handle nanosecond overflow
+		if nsecs >= 1e9:
+			secs += 1
+			nsecs -= int(1e9)
+		pred_state.header.stamp.secs = secs
+		pred_state.header.stamp.nsecs = nsecs
+		print(f"Types: secs={type(pred_state.header.stamp.secs)}, nsecs={type(pred_state.header.stamp.nsecs)}")
+
+		# print(type(pred_state.header.stamp.secs))
+		# print(type(pred_state.header.stamp.nsecs))
 		self.pub.publish(pred_state)
 
 

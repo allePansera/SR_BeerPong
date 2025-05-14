@@ -74,6 +74,47 @@ def angle(x,y,z,vx,vy,vz):
     return euler_to_quaternion(angle1,0,angle3), np.array([vp*sin(angle1),-vp*cos(angle1),vp*sin(angle3)])
 
 
+def compute_paddle_orientation(ball_pos, target_pos, vx, vy, vz):
+    # Compute the vector from the ball to the target
+    ball_pos = np.array(ball_pos)
+    target_pos = np.array(target_pos)
+    vector_to_target = target_pos - ball_pos
+    
+    # Project the vector onto the XY plane (ignore the Z-axis)
+    vector_to_target_2D = vector_to_target[:2]  # Use only x and y components
+    
+    # Calculate the yaw angle using atan2
+    yaw = np.arctan2(vector_to_target_2D[1], vector_to_target_2D[0])  # Yaw is the rotation around the Z-axis
+    
+    # Calculate pitch and roll as in the first method
+    # Use some placeholder functions for pitch/roll calculations if needed
+    pitch = 0.0  # Assuming no change in pitch
+    roll = 0.0   # Assuming no change in roll
+    
+    # Update yaw using velocity and position as in the original method
+    yaw_vp0 = np.array([0, 0])
+    yaw_vp = fsolve(yaw_vp_eq, yaw_vp0, args=(ball_pos[0], ball_pos[1], ball_pos[2], vx, vy, vz))
+    print("yaw_vp = ", yaw_vp)
+
+    roll_vp0 = np.array([0, 0])
+    roll_vp = fsolve(roll_vp_eq, roll_vp0, args=(ball_pos[0], ball_pos[1], ball_pos[2], vx, vy, vz))
+    print("roll_vp = ", roll_vp)
+    
+    # Average the velocities to compute paddle velocity (vp)
+    vp = (yaw_vp[1] + roll_vp[1]) / 2
+    angle1 = yaw_vp[0] + 3.14
+    angle3 = roll_vp[0] - 1.57
+    
+    # Convert final Euler angles to quaternion
+    ori = euler_to_quaternion(angle1, pitch, angle3)
+    
+    # Calculate paddle velocity in the world frame based on angles
+    velocity = np.array([vp * np.sin(angle1), -vp * np.cos(angle1), vp * np.sin(angle3)])
+    
+    return ori, velocity
+
+
+
 def callback(msg):
     global x,y,z,vx,vy,vz
     x = msg.pos.x

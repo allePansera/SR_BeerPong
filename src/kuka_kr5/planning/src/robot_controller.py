@@ -161,7 +161,12 @@ class RobotController:
             # constraints.orientation_constraints = orien_const
             self.group.set_path_constraints(constraints)
 
-            traj = self.group.plan()
+            output = self.group.plan()
+            
+            if isinstance(output, tuple):
+                traj = output[1]
+            else:
+                traj = output
 
             new_traj = RobotTrajectory()
             new_traj.joint_trajectory.header = traj.joint_trajectory.header
@@ -181,8 +186,9 @@ class RobotController:
                     # new_traj.joint_trajectory.points[i].accelerations.append(traj.joint_trajectory.points[i].accelerations[j] * self.speed * self.speed)
                     new_traj.joint_trajectory.points[i].positions.append(traj.joint_trajectory.points[i].positions[j])
 
-            if time is not None:
-                new_traj.joint_trajectory.header.stamp = time - new_traj.joint_trajectory.points[-1].time_from_start - rospy.Duration(0.0)
+            if time is not None and new_traj.joint_trajectory.points:
+                new_traj.joint_trajectory.header.stamp = time - new_traj.joint_trajectory.points[-1].time_from_start
+
 
             return new_traj
 
@@ -201,7 +207,7 @@ if __name__ == '__main__':
     rospy.init_node('path_planning')
     controller = RobotController(10.0)
     while not rospy.is_shutdown():
-        line = raw_input("Enter goal: ")
+        line = input("Enter goal: ")
         if len(line) == 0:
             controller.move_to_goal(0.5, .3, 0.76)
         else:
