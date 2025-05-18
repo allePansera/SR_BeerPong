@@ -13,11 +13,12 @@ from robot_controller import RobotController
 from paddle_angle_dummy import angle
 
 # Target point where the ball should land
-TARGET_POINT = [0.0, -3.5, 1.5]  # [x, y, z] - Modify this to your desired target point
-
+TARGET_POINT_1 = [0.0, -3.5, 1.5]  # [x, y, z] - Modify this to your desired target point
+TARGET_POINT_2 = [0.0, -4.5, 1.5]  # [x, y, z] - Modify this to your desired target point
 moving = False
 count = 0
 hit = False
+hit_counter = 0  # Track the number of hits to alternate between targets
 
 HOME_POSE = [0, 0, 1]
 HOME_ORI = [-0.00060612617037, 0.98890581114, 0.148542219849, 0.000371788566274]
@@ -107,7 +108,7 @@ def calculate_hit_speed(ball_pos, ball_vel, target_point):
     
     # Let's assume the controller's speed setting is proportional 
     # to the resulting ball velocity by some factor
-    velocity_to_speed_factor = 2.0  # This factor maps velocity to controller speed
+    velocity_to_speed_factor = 2.1  # This factor maps velocity to controller speed
     
     hit_speed = speed * velocity_to_speed_factor
     
@@ -120,7 +121,7 @@ def calculate_hit_speed(ball_pos, ball_vel, target_point):
 
 
 def callback(msg):
-    global moving, count, hit
+    global moving, count, hit, hit_counter
 
     if msg.vel.y > 0 and not moving:
         hit = False
@@ -132,6 +133,7 @@ def callback(msg):
     if msg.hittable and count == 2 and not hit:
         moving = True
         hit = True
+        hit_counter += 1  # Increment hit counter for alternating targets
 
         # Ball position and velocity
         ball_pos = [msg.pos.x, msg.pos.y, msg.pos.z]
@@ -143,8 +145,11 @@ def callback(msg):
         # Get orientation from original angle function
         ori, euler = angle(msg.pos.x, msg.pos.y, msg.pos.z, msg.vel.x, msg.vel.y, msg.vel.z)
         
+        # Select target based on hit counter (odd/even)
+        current_target = TARGET_POINT_1 if hit_counter % 2 == 1 else TARGET_POINT_2
+        
         # Calculate hit speed to reach target point
-        hit_speed = calculate_hit_speed(ball_pos, ball_vel, TARGET_POINT)
+        hit_speed = calculate_hit_speed(ball_pos, ball_vel, current_target)
         
         # Move to the ball's position
         print('Moving arm to ball position:', ball_pos)
@@ -169,7 +174,7 @@ def callback(msg):
         controller_hit.speed = hit_speed
         
         # Execute the hit
-        print(f'Hitting ball toward target {TARGET_POINT} with speed {hit_speed}')
+        print(f'Hitting ball toward target {current_target} with speed {hit_speed} (Hit #{hit_counter})')
         controller_hit.move_to_goal(*(goal + ori), time=msg.header.stamp + rospy.Duration(0.1))
         
         rospy.sleep(0.1)
@@ -190,7 +195,7 @@ if __name__ == '__main__':
     controller.move_to_goal(*HOME)
     
     # Print target information
-    print(f"Target point set to: {TARGET_POINT}")
+    print(f"Targets set to: {TARGET_POINT_1} (odd hits) and {TARGET_POINT_2} (even hits)")
     
     # Subscribe to ball state
     sub = rospy.Subscriber('/ball_detection/predicted_ball_state', PosVelTimed, callback, queue_size=10)

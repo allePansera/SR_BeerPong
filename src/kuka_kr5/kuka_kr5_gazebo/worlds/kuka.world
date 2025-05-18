@@ -8,7 +8,7 @@
       <gravity>0 0 -9.8</gravity>
     </physics>
 
-    <atmosphere type="none"/>
+    <!-- <atmosphere type="none"/> -->
 
     <wind>
       <linear_velocity>0 0 0</linear_velocity>
@@ -39,6 +39,17 @@
       <!-- Slightly negative Y side (e.g., -0.5m offset) -->
       <pose>0 -3.5 0.0 0 0 0</pose>
     </include>
+
+     <!-- Add Big Vase -->
+    <include>
+      <uri>model://vase_large_2</uri>
+      <name>vase_large_3</name>
+      <!-- Table's surface is approx at Z = 0.76; box is 0.5m tall, origin at base -->
+      <!-- Slightly negative Y side (e.g., -0.5m offset) -->
+      <pose>0 -4.5 0.0 0 0 0</pose>
+    </include>
+
+
 
     <!-- Cameras -->
     <include>

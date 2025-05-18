@@ -331,7 +331,7 @@ class SpawnModel():
 if __name__ == "__main__":
     rospy.init_node('spawn_model')
     
-    pose = [0.2, -2.5, 1.5]
+    pose = [0, -2.5, 1.5]
     vel = [0, 2.75, 2, 0, 0, 0]
 
     while not rospy.is_shutdown():
