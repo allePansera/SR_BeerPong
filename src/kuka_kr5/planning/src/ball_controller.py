@@ -108,7 +108,7 @@ def calculate_hit_speed(ball_pos, ball_vel, target_point):
     
     # Let's assume the controller's speed setting is proportional 
     # to the resulting ball velocity by some factor
-    velocity_to_speed_factor = 2.1  # This factor maps velocity to controller speed
+    velocity_to_speed_factor = 2.15  # This factor maps velocity to controller speed
     
     hit_speed = speed * velocity_to_speed_factor
     

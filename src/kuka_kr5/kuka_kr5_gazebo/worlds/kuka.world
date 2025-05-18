@@ -8,13 +8,16 @@
       <gravity>0 0 -9.8</gravity>
     </physics>
 
-    <!-- <atmosphere type="none"/> -->
+    <!-- <atmosphere type="none"/>-->
 
     <wind>
       <linear_velocity>0 0 0</linear_velocity>
     </wind>
 
-    
+    <atmosphere>
+      <type>none</type>
+    </atmosphere>
+
     <!-- Ground and sun -->
     <include>
       <uri>model://ground_plane</uri>
