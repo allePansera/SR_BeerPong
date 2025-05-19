@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2013 Open Source Robotics Foundation
 #
@@ -18,7 +18,10 @@
 # Author: John Hsu, Dave Coleman
 #
 
-import rospy, sys, os, time
+import rospy
+import sys
+import os
+import time
 import string
 import warnings
 import re
@@ -39,6 +42,7 @@ model_database_template = """<sdf version="1.4">
     </include>
   </world>
 </sdf>"""
+
 
 def usage():
     print('''Commands:
@@ -70,193 +74,197 @@ def usage():
     ''')
     sys.exit(1)
 
+
 class SpawnModel():
     def __init__(self):
-        self.initial_xyz             = [0,0,0]
-        self.initial_rpy             = [0,0,0]
-        self.initial_q               = [0,0,0,1]
-        self.file_name               = os.path.expanduser("~/table-tennis-robot/src/kuka_kr5/kuka_kr5_gazebo/models/ping_pong_ball/model.sdf")
-        self.param_name              = ""
-        self.database_name           = ""
-        self.model_name              = ""
-        self.robot_namespace         = rospy.get_namespace()
-        self.gazebo_namespace        = "/gazebo"
-        self.reference_frame         = ""
-        self.unpause_physics         = False
-        self.wait_for_model          = ""
-        self.wait_for_model_exists   = False
-        self.urdf_format             = False
-        self.sdf_format              = True
-        self.joint_names             = []
-        self.joint_positions         = []
-        self.package_to_model        = False
-        self.bond                    = False
-        #self.user_input = ["-file", "/home/imasmm/proj_ws/test/src/auto_ball/models/ping_pong_ball/model.sdf", "-sdf", "-x", "0", "-y", "-0", "-z", "1", "-model", "ping_pong_ball_0"]
+        self.initial_xyz = [0, 0, 0]
+        self.initial_rpy = [0, 0, 0]
+        self.initial_q = [0, 0, 0, 1]
+        if os.path.exists(os.path.expanduser("~/table-tennis-robot/src/kuka_kr5/kuka_kr5_gazebo/models/ping_pong_ball/model.sdf")):
+            self.file_name = os.path.expanduser("~/table-tennis-robot/src/kuka_kr5/kuka_kr5_gazebo/models/ping_pong_ball/model.sdf")
+        else:
+            self.file_name = os.path.expanduser("/home/ayoub/Desktop/SR_BeerPong/src/kuka_kr5/kuka_kr5_gazebo/models/ping_pong_ball/model.sdf")
+        self.param_name = ""
+        self.database_name = ""
+        self.model_name = ""
+        self.robot_namespace = rospy.get_namespace()
+        self.gazebo_namespace = "/gazebo"
+        self.reference_frame = ""
+        self.unpause_physics = False
+        self.wait_for_model = ""
+        self.wait_for_model_exists = False
+        self.urdf_format = False
+        self.sdf_format = True
+        self.joint_names = []
+        self.joint_positions = []
+        self.package_to_model = False
+        self.bond = False
+        # self.user_input = ["-file", "/home/imasmm/proj_ws/test/src/auto_ball/models/ping_pong_ball/model.sdf", "-sdf", "-x", "0", "-y", "-0", "-z", "1", "-model", "ping_pong_ball_0"]
 
     def parseUserInputs(self):
         # get goal from commandline
-        for i in range(0,len(self.user_input)):
-          if self.user_input[i] == '-h' or self.user_input[i] == '--help' or self.user_input[i] == '-help':
-            usage()
-            sys.exit(1)
-          if self.user_input[i] == '-unpause':
-            self.unpause_physics = True
-          if self.user_input[i] == '-urdf':
-            if self.sdf_format == True:
-                rospy.logerr("Error: you cannot specify both urdf and sdf format xml, must pick one")
-                sys.exit(0)
-            else:
-              self.urdf_format = True;
-          if self.user_input[i] == '-sdf' or self.user_input[i] == '-gazebo':
-            if self.urdf_format == True:
-                rospy.logerr("Error: you cannot specify both urdf and sdf format xml, must pick one")
-                sys.exit(0)
-            else:
-                if self.user_input[i] == '-gazebo':
-                    rospy.logwarn("Deprecated: the -gazebo tag is now -sdf")
-                    warnings.warn("Deprecated: the -gazebo tag is now -sdf", DeprecationWarning)
-                self.sdf_format = True;
-          if self.user_input[i] == '-J':
-            if len(self.user_input) > i+2:
-              self.joint_names.append(self.user_input[i+1])
-              self.joint_positions.append(float(self.user_input[i+2]))
-            else:
-              rospy.logerr("Error: must specify a joint name and joint value pair")
-              sys.exit(0)
-          if self.user_input[i] == '-param':
-            if len(self.user_input) > i+1:
-              if self.file_name != "" or self.database_name != "":
-                rospy.logerr("Error: you cannot specify file name if parameter or database name is given, must pick one source of model xml")
-                sys.exit(0)
-              else:
-                self.param_name = self.user_input[i+1]
-          if self.user_input[i] == '-file':
-            if len(self.user_input) > i+1:
-              if self.param_name != "" or self.database_name != "":
-                rospy.logerr("Error: you cannot specify parameter if file or database name is given, must pick one source of model xml")
-                sys.exit(0)
-              else:
-                self.file_name = self.user_input[i+1]
-          if self.user_input[i] == '-database':
-            if len(self.user_input) > i+1:
-              if self.param_name != "" or self.file_name != "":
-                rospy.logerr("Error: you cannot specify parameter if file or parameter name is given, must pick one source of model xml")
-                sys.exit(0)
-              else:
-                self.database_name = self.user_input[i+1]
-          if self.user_input[i] == '-model':
-            if len(self.user_input) > i+1:
-              self.model_name = self.user_input[i+1]
-          if self.user_input[i] == '-wait':
-            if len(self.user_input) > i+1:
-              self.wait_for_model = self.user_input[i+1]
-          if self.user_input[i] == '-reference_frame':
-            if len(self.user_input) > i+1:
-              self.reference_frame = self.user_input[i+1]
-          if self.user_input[i] == '-robot_namespace':
-            if len(self.user_input) > i+1:
-              self.robot_namespace = self.user_input[i+1]
-          if self.user_input[i] == '-namespace':
-            if len(self.user_input) > i+1:
-              self.robot_namespace = self.user_input[i+1]
-          if self.user_input[i] == '-gazebo_namespace':
-            if len(self.user_input) > i+1:
-              self.gazebo_namespace = self.user_input[i+1]
-          if self.user_input[i] == '-x':
-            if len(self.user_input) > i+1:
-              self.initial_xyz[0] = float(self.user_input[i+1])
-          if self.user_input[i] == '-y':
-            if len(self.user_input) > i+1:
-              self.initial_xyz[1] = float(self.user_input[i+1])
-          if self.user_input[i] == '-z':
-            if len(self.user_input) > i+1:
-              self.initial_xyz[2] = float(self.user_input[i+1])
-          if self.user_input[i] == '-R':
-            if len(self.user_input) > i+1:
-              self.initial_rpy[0] = float(self.user_input[i+1])
-          if self.user_input[i] == '-P':
-            if len(self.user_input) > i+1:
-              self.initial_rpy[1] = float(self.user_input[i+1])
-          if self.user_input[i] == '-Y':
-            if len(self.user_input) > i+1:
-              self.initial_rpy[2] = float(self.user_input[i+1])
-          if self.user_input[i] == '-package_to_model':
-              self.package_to_model = True;
-          if self.user_input[i] == '-b':
-            self.bond = True
+        for i in range(0, len(self.user_input)):
+            if self.user_input[i] == '-h' or self.user_input[i] == '--help' or self.user_input[i] == '-help':
+                usage()
+                sys.exit(1)
+            if self.user_input[i] == '-unpause':
+                self.unpause_physics = True
+            if self.user_input[i] == '-urdf':
+                if self.sdf_format == True:
+                    rospy.logerr("Error: you cannot specify both urdf and sdf format xml, must pick one")
+                    sys.exit(0)
+                else:
+                    self.urdf_format = True
+            if self.user_input[i] == '-sdf' or self.user_input[i] == '-gazebo':
+                if self.urdf_format == True:
+                    rospy.logerr("Error: you cannot specify both urdf and sdf format xml, must pick one")
+                    sys.exit(0)
+                else:
+                    if self.user_input[i] == '-gazebo':
+                        rospy.logwarn("Deprecated: the -gazebo tag is now -sdf")
+                        warnings.warn("Deprecated: the -gazebo tag is now -sdf", DeprecationWarning)
+                    self.sdf_format = True
+            if self.user_input[i] == '-J':
+                if len(self.user_input) > i+2:
+                    self.joint_names.append(self.user_input[i+1])
+                    self.joint_positions.append(float(self.user_input[i+2]))
+                else:
+                    rospy.logerr("Error: must specify a joint name and joint value pair")
+                    sys.exit(0)
+            if self.user_input[i] == '-param':
+                if len(self.user_input) > i+1:
+                    if self.file_name != "" or self.database_name != "":
+                        rospy.logerr("Error: you cannot specify file name if parameter or database name is given, must pick one source of model xml")
+                        sys.exit(0)
+                    else:
+                        self.param_name = self.user_input[i+1]
+            if self.user_input[i] == '-file':
+                if len(self.user_input) > i+1:
+                    if self.param_name != "" or self.database_name != "":
+                        rospy.logerr("Error: you cannot specify parameter if file or database name is given, must pick one source of model xml")
+                        sys.exit(0)
+                    else:
+                        self.file_name = self.user_input[i+1]
+            if self.user_input[i] == '-database':
+                if len(self.user_input) > i+1:
+                    if self.param_name != "" or self.file_name != "":
+                        rospy.logerr("Error: you cannot specify parameter if file or parameter name is given, must pick one source of model xml")
+                        sys.exit(0)
+                    else:
+                        self.database_name = self.user_input[i+1]
+            if self.user_input[i] == '-model':
+                if len(self.user_input) > i+1:
+                    self.model_name = self.user_input[i+1]
+            if self.user_input[i] == '-wait':
+                if len(self.user_input) > i+1:
+                    self.wait_for_model = self.user_input[i+1]
+            if self.user_input[i] == '-reference_frame':
+                if len(self.user_input) > i+1:
+                    self.reference_frame = self.user_input[i+1]
+            if self.user_input[i] == '-robot_namespace':
+                if len(self.user_input) > i+1:
+                    self.robot_namespace = self.user_input[i+1]
+            if self.user_input[i] == '-namespace':
+                if len(self.user_input) > i+1:
+                    self.robot_namespace = self.user_input[i+1]
+            if self.user_input[i] == '-gazebo_namespace':
+                if len(self.user_input) > i+1:
+                    self.gazebo_namespace = self.user_input[i+1]
+            if self.user_input[i] == '-x':
+                if len(self.user_input) > i+1:
+                    self.initial_xyz[0] = float(self.user_input[i+1])
+            if self.user_input[i] == '-y':
+                if len(self.user_input) > i+1:
+                    self.initial_xyz[1] = float(self.user_input[i+1])
+            if self.user_input[i] == '-z':
+                if len(self.user_input) > i+1:
+                    self.initial_xyz[2] = float(self.user_input[i+1])
+            if self.user_input[i] == '-R':
+                if len(self.user_input) > i+1:
+                    self.initial_rpy[0] = float(self.user_input[i+1])
+            if self.user_input[i] == '-P':
+                if len(self.user_input) > i+1:
+                    self.initial_rpy[1] = float(self.user_input[i+1])
+            if self.user_input[i] == '-Y':
+                if len(self.user_input) > i+1:
+                    self.initial_rpy[2] = float(self.user_input[i+1])
+            if self.user_input[i] == '-package_to_model':
+                self.package_to_model = True
+            if self.user_input[i] == '-b':
+                self.bond = True
 
         if not self.sdf_format and not self.urdf_format:
-          rospy.logerr("Error: you must specify incoming format as either urdf or sdf format xml")
-          sys.exit(0)
+            rospy.logerr("Error: you must specify incoming format as either urdf or sdf format xml")
+            sys.exit(0)
         if self.model_name == "":
-          rospy.logerr("Error: you must specify model name")
-          sys.exit(0)
+            rospy.logerr("Error: you must specify model name")
+            sys.exit(0)
 
-    def checkForModel(self,model):
+    def checkForModel(self, model):
         for n in model.name:
-          if n == self.wait_for_model:
-            self.wait_for_model_exists = True
-
+            if n == self.wait_for_model:
+                self.wait_for_model_exists = True
 
     # Generate a blank SDF file with an include for the model from the model database
+
     def createDatabaseCode(self, database_name):
-        return model_database_template.replace("MODEL_NAME", database_name);
+        return model_database_template.replace("MODEL_NAME", database_name)
 
     def callSpawnService(self, vel):
 
         # wait for model to exist
         if not self.wait_for_model == "":
-          rospy.Subscriber("%s/model_states"%(self.gazebo_namespace), ModelStates, self.checkForModel)
-          r= rospy.Rate(10)
-          while not rospy.is_shutdown() and not self.wait_for_model_exists:
-            r.sleep()
+            rospy.Subscriber("%s/model_states" % (self.gazebo_namespace), ModelStates, self.checkForModel)
+            r = rospy.Rate(10)
+            while not rospy.is_shutdown() and not self.wait_for_model_exists:
+                r.sleep()
 
         if rospy.is_shutdown():
-          sys.exit(0)
+            sys.exit(0)
 
         if self.file_name != "":
-          rospy.loginfo("Loading model XML from file")
-          if os.path.exists(self.file_name):
-            if os.path.isdir(self.file_name):
-              rospy.logerr("Error: file name is a path? %s", self.file_name)
-              sys.exit(0)
-            if not os.path.isfile(self.file_name):
-              rospy.logerr("Error: unable to open file %s", self.file_name)
-              sys.exit(0)
-          else:
-            rospy.logerr("Error: file does not exist %s", self.file_name)
-            sys.exit(0)
-          # load file
-          f = open(self.file_name,'r')
-          model_xml = f.read()
-          if model_xml == "":
-            rospy.logerr("Error: file is empty %s", self.file_name)
-            sys.exit(0)
+            rospy.loginfo("Loading model XML from file")
+            if os.path.exists(self.file_name):
+                if os.path.isdir(self.file_name):
+                    rospy.logerr("Error: file name is a path? %s", self.file_name)
+                    sys.exit(0)
+                if not os.path.isfile(self.file_name):
+                    rospy.logerr("Error: unable to open file %s", self.file_name)
+                    sys.exit(0)
+            else:
+                rospy.logerr("Error: file does not exist %s", self.file_name)
+                sys.exit(0)
+            # load file
+            f = open(self.file_name, 'r')
+            model_xml = f.read()
+            if model_xml == "":
+                rospy.logerr("Error: file is empty %s", self.file_name)
+                sys.exit(0)
 
-          model_xml = self.setVelocity(model_xml, vel)
-          rospy.sleep(1)
+            model_xml = self.setVelocity(model_xml, vel)
+            rospy.sleep(1)
 
         # ROS Parameter
         elif self.param_name != "":
-          rospy.loginfo( "Loading model XML from ros parameter")
-          model_xml = rospy.get_param(self.param_name)
-          if model_xml == "":
-            rospy.logerr("Error: param does not exist or is empty")
-            sys.exit(0)
+            rospy.loginfo("Loading model XML from ros parameter")
+            model_xml = rospy.get_param(self.param_name)
+            if model_xml == "":
+                rospy.logerr("Error: param does not exist or is empty")
+                sys.exit(0)
 
         # Gazebo Model Database
         elif self.database_name != "":
-          rospy.loginfo( "Loading model XML from Gazebo Model Database")
-          model_xml = self.createDatabaseCode(self.database_name)
-          if model_xml == "":
-            rospy.logerr("Error: an error occured generating the SDF file")
-            sys.exit(0)
+            rospy.loginfo("Loading model XML from Gazebo Model Database")
+            model_xml = self.createDatabaseCode(self.database_name)
+            if model_xml == "":
+                rospy.logerr("Error: an error occured generating the SDF file")
+                sys.exit(0)
         else:
-          rospy.logerr("Error: user specified param or filename is an empty string")
-          sys.exit(0)
+            rospy.logerr("Error: user specified param or filename is an empty string")
+            sys.exit(0)
 
         if self.package_to_model:
-            model_xml = re.sub("<\s*mesh\s+filename\s*=\s*([\"|'])package://","<mesh filename=\g<1>model://", model_xml)
+            model_xml = re.sub("<\s*mesh\s+filename\s*=\s*([\"|'])package://", "<mesh filename=\g<1>model://", model_xml)
 
         # setting initial pose
         initial_pose = Pose()
@@ -264,44 +272,43 @@ class SpawnModel():
         initial_pose.position.y = self.initial_xyz[1]
         initial_pose.position.z = self.initial_xyz[2]
         # convert rpy to quaternion for Pose message
-        tmpq = tft.quaternion_from_euler(self.initial_rpy[0],self.initial_rpy[1],self.initial_rpy[2])
-        q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
-        initial_pose.orientation = q;
+        tmpq = tft.quaternion_from_euler(self.initial_rpy[0], self.initial_rpy[1], self.initial_rpy[2])
+        q = Quaternion(tmpq[0], tmpq[1], tmpq[2], tmpq[3])
+        initial_pose.orientation = q
 
         # spawn model
         if self.urdf_format:
-          success = gazebo_interface.spawn_urdf_model_client(self.model_name, model_xml, self.robot_namespace,
-                                                             initial_pose, self.reference_frame, self.gazebo_namespace)
+            success = gazebo_interface.spawn_urdf_model_client(self.model_name, model_xml, self.robot_namespace,
+                                                               initial_pose, self.reference_frame, self.gazebo_namespace)
         elif self.sdf_format:
-          success = gazebo_interface.spawn_sdf_model_client(self.model_name, model_xml, self.robot_namespace,
-                                                            initial_pose, self.reference_frame, self.gazebo_namespace)
+            success = gazebo_interface.spawn_sdf_model_client(self.model_name, model_xml, self.robot_namespace,
+                                                              initial_pose, self.reference_frame, self.gazebo_namespace)
         else:
-          rospy.logerr("Error: should not be here in spawner helper script, there is a bug")
-          sys.exit(0)
+            rospy.logerr("Error: should not be here in spawner helper script, there is a bug")
+            sys.exit(0)
 
         # set model configuration before unpause if user requested
         if len(self.joint_names) != 0:
-          try:
-            success = gazebo_interface.set_model_configuration_client(self.model_name, self.param_name,
-                                                                      self.joint_names, self.joint_positions, self.gazebo_namespace)
-          except rospy.ServiceException as e:
-            rospy.logerr("Set model configuration service call failed: %s", e)
+            try:
+                success = gazebo_interface.set_model_configuration_client(self.model_name, self.param_name,
+                                                                          self.joint_names, self.joint_positions, self.gazebo_namespace)
+            except rospy.ServiceException as e:
+                rospy.logerr("Set model configuration service call failed: %s", e)
 
         # unpause physics if user requested
         if self.unpause_physics:
-          rospy.wait_for_service('%s/unpause_physics'%(self.gazebo_namespace))
-          try:
-            unpause_physics = rospy.ServiceProxy('%s/unpause_physics'%(self.gazebo_namespace), Empty)
-            unpause_physics()
-          except rospy.ServiceException as e:
-            rospy.logerr("Unpause physics service call failed: %s", e)
+            rospy.wait_for_service('%s/unpause_physics' % (self.gazebo_namespace))
+            try:
+                unpause_physics = rospy.ServiceProxy('%s/unpause_physics' % (self.gazebo_namespace), Empty)
+                unpause_physics()
+            except rospy.ServiceException as e:
+                rospy.logerr("Unpause physics service call failed: %s", e)
 
         return
 
-
     def callDeleteService(self):
         try:
-            delete_model = rospy.ServiceProxy('%s/delete_model'%(self.gazebo_namespace), DeleteModel)
+            delete_model = rospy.ServiceProxy('%s/delete_model' % (self.gazebo_namespace), DeleteModel)
             delete_model(model_name=self.model_name)
         except rospy.ServiceException as e:
             print('delete failed')
@@ -327,10 +334,9 @@ class SpawnModel():
         return model_xml
 
 
-
 if __name__ == "__main__":
     rospy.init_node('spawn_model')
-    
+
     pose = [0, -2.5, 1.5]
     vel = [0, 2.75, 2, 0, 0, 0]
 
@@ -338,14 +344,14 @@ if __name__ == "__main__":
         while True:
             pose_input = input("Enter position or enter for last value {}: ".format(pose))
             if len(pose_input) > 0:
-              try:
-                  pose_input = pose_input.split(' ')
-                  pose = [float(pose_input[0]), float(pose_input[1]), float(pose_input[2])]
-              except Exception as e:
-                  print(e)
-                  continue
+                try:
+                    pose_input = pose_input.split(' ')
+                    pose = [float(pose_input[0]), float(pose_input[1]), float(pose_input[2])]
+                except Exception as e:
+                    print(e)
+                    continue
             break
-        
+
         while True:
             vel_input = input("Enter xyz velocities or 'r' for random or enter for last value {}: ".format(vel))
             if vel_input == 'r':
@@ -375,8 +381,3 @@ if __name__ == "__main__":
     if sm.bond:
         rospy.on_shutdown(sm.callDeleteService)
         rospy.spin()
-
-
-
-
-    

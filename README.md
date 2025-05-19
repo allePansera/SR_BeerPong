@@ -3,6 +3,15 @@ A robot that can play table tennis, our final project for Berkeley EECS 106A. Pl
 
 ## Installation
 
+Create alias for python3
+
+```bash
+sudo apt install python-is-python3
+nano ~/.bashrc
+# write:
+# alias python=python3
+```
+
 Clone the project then move inside it. Then install required lib
 
     sudo apt install ros-noetic-desktop-full
@@ -10,7 +19,7 @@ Clone the project then move inside it. Then install required lib
     sudo rosdep init
     rosdep update
     sudo apt install ros-noetic-gazebo-ros-pkgs ros-noetic-rviz ros-noetic-tf2-ros
-    pip install scipy numpy
+    pip install 'scipy==1.10.1' 'numpy==1.22.0'
 
 Then do
 

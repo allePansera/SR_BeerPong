@@ -22,9 +22,11 @@ TABLE_CENTER.pose.orientation.w = 1
 
 TABLE_SIZE = [1.525, 2.74, 0.0201]
 
+
 def copy_attr(a, b, attributes=['x', 'y', 'z']):
     for attr in attributes:
         setattr(a, attr, getattr(b, attr))
+
 
 class RobotController:
 
@@ -42,7 +44,7 @@ class RobotController:
         self.scene_publisher = rospy.Publisher('/collision_object', CollisionObject, queue_size=10)
 
         # Instantiate a move group
-        self.group = moveit_commander.MoveGroupCommander(GROUP_NAME)
+        self.group = moveit_commander.MoveGroupCommander(GROUP_NAME, wait_for_servers=100.0)
 
         # Set the maximum time MoveIt will try to plan before giving up
         self.group.set_planning_time(.25)
@@ -101,7 +103,7 @@ class RobotController:
         # self.display_pub.publish(display)
 
         plan1 = self.plan_to_goal(*(pos + orient), time=time)
-        
+
         start = RobotState()
         start.joint_state.header.stamp = plan1.joint_trajectory.header.stamp + plan1.joint_trajectory.points[-1].time_from_start
         start.joint_state.name = plan1.joint_trajectory.joint_names
@@ -111,7 +113,7 @@ class RobotController:
         vector = CENTER - np.array(pos)
         vector = vector / np.linalg.norm(vector)
         print('delta vector:', vector)
-        pos += vector * .2 # Move towards center of other side by .2
+        pos += vector * .2  # Move towards center of other side by .2
 
         plan2 = self.plan_to_goal(*(list(pos) + orient), start=start, time=time)
 
@@ -127,9 +129,9 @@ class RobotController:
         for p in plan2.joint_trajectory.points[1:]:
             p.time_from_start += plan1.joint_trajectory.points
             traj.joint_trajectory.points.append(p)
-        
+
         print("combined traj:", traj)
-        
+
         if not self.group.execute(traj, True):
             print("Execution failed")
 
@@ -140,12 +142,12 @@ class RobotController:
             if time is not None:
                 goal.header.stamp = time
 
-            #x, y, and z position
+            # x, y, and z position
             goal.pose.position.x = x
             goal.pose.position.y = y
             goal.pose.position.z = z
 
-            #Orientation as a quaternion
+            # Orientation as a quaternion
             goal.pose.orientation.x = or_x
             goal.pose.orientation.y = or_y
             goal.pose.orientation.z = or_z
@@ -189,7 +191,6 @@ class RobotController:
             if time is not None and new_traj.joint_trajectory.points:
                 new_traj.joint_trajectory.header.stamp = time - new_traj.joint_trajectory.points[-1].time_from_start
 
-
             return new_traj
 
         except Exception as e:
@@ -200,7 +201,6 @@ class RobotController:
         plan = self.plan_to_goal(*args, **kwargs)
         if not self.group.execute(plan, True):
             print("Execution failed")
-
 
 
 if __name__ == '__main__':
