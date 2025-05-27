@@ -164,7 +164,7 @@ class RobotController:
             self.group.set_path_constraints(constraints)
 
             output = self.group.plan()
-            print(output)
+            # print(output)
             if isinstance(output, tuple):
                 traj = output[1]
             else:
