@@ -53,6 +53,8 @@
   <node name="side_camera_frame_publisher" pkg="tf" type="static_transform_publisher" output="screen"
     args="-4.0 -1.37 0.76 0 0 0 world side_camera_frame 100"
   />
+  
+  <node pkg="kuka_kr5_gazebo" type="fix_camera.py" name="camera_reset_node" output="screen" />
 
   <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
       <param name="/use_gui" value="false" />

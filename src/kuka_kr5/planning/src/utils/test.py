@@ -1,45 +1,13 @@
-#!/usr/bin/env python3
-
 from __future__ import print_function
 
-import sys
 import math
-from collections import deque
 import numpy as np
-
+from .paddle_angle_dummy import angle
 import rospy
-from ball_detection.msg import PosVelTimed
-from robot_controller import RobotController
-from paddle_angle_dummy import angle, angle_with_target
-from tf.transformations import quaternion_from_euler
 
-# Target point where the ball should land
+
 TARGET_POINT_1 = [0.0, -3.5, 1.5]
 TARGET_POINT_2 = [0.0, -4.5, 1.5]
-moving = False
-count = 0
-hit = False
-hit_counter = 0  # Track the number of hits to alternate between targets
-
-# -------------------------------------- Originale ---------------------------------------
-# HOME_POSE = [0, 0, 1]
-# HOME_ORI = [-0.00060612617037, 0.98890581114, 0.148542219849, 0.000371788566274]
-
-# ----------------------------- Posizione pronta per colpire -----------------------------
-HOME_POSE = [-0.000, -0.156, 1.232]
-roll, pitch, yaw = -2.842, -0.018, -3.093
-HOME_ORI = list(quaternion_from_euler(roll, pitch, yaw))
-
-# ---------- Posizione per tenere la racchetta ferma e far rimbalzare la pallina ----------
-# HOME_POSE = [0, 0, 1.425]
-# roll, pitch, yaw = -3.141, 0.001, -0.001 + (-0.5 * math.pi / 180)
-# HOME_ORI = list(quaternion_from_euler(roll, pitch, yaw))
-
-
-HOME = HOME_POSE + HOME_ORI
-# 90 -90 90 180 -90 93
-
-moving = False
 
 
 def calculate_hit_speed_adv(ball_pos, ball_vel, target_point, euler_angles):
@@ -88,8 +56,10 @@ def calculate_hit_speed_adv(ball_pos, ball_vel, target_point, euler_angles):
     efficiency_factor = max(efficiency_factor, 0.2)  # Set minimum efficiency
 
     # Compute adjusted horizontal velocity based on paddle angle
-    base_horizontal_velocity = -0.3  # Base velocity for short distances
-    distance_factor = 3.125  # Velocity increase per meter of distance
+    # base_horizontal_velocity = -0.3  # Base velocity for short distances
+    # distance_factor = 3.05  # Velocity increase per meter of distance
+    base_horizontal_velocity = -0.35  # Base velocity for short distances
+    distance_factor = 3.2  # Velocity increase per meter of distance
     v_horizontal = base_horizontal_velocity + (horizontal_dist * distance_factor)
     # v_horizontal = min(v_horizontal, 6.0)  # Cap between 1.0 and 6.0 m/s
 
@@ -223,9 +193,7 @@ def calculate_hit_speed(ball_pos, ball_vel, target_point):
     return hit_speed
 
 
-def callback(msg):
-    global moving, count, hit, hit_counter
-
+def callback_controller(msg, controller, controller_hit, HOME, moving, count, hit, hit_counter):
     if msg.vel.y > 0 and not moving:
         hit = False
     if not msg.hittable:
@@ -239,8 +207,6 @@ def callback(msg):
         hit_counter += 1  # Increment hit counter for alternating targets
 
         # Ball position and velocity
-        # ball_pos = [msg.pos.x, msg.pos.y, msg.pos.z]
-        # ball_vel = [msg.vel.x, msg.vel.y, msg.vel.z]
         ball_pos = [0.0, -0.15, 1.23]
         ball_vel = [0.0, 3.25, 2.18]
         real_ball_pos = [0, -0.15, 1.23]
@@ -300,25 +266,14 @@ def callback(msg):
 
         rospy.sleep(0.1)
 
+        return moving, count, hit, hit_counter
+
     elif moving and hit:
         moving = False
         hit = False
         controller.move_to_goal(*HOME)
 
+        return moving, count, hit, hit_counter
 
-if __name__ == '__main__':
-    rospy.init_node('ball_controller')
-    controller = RobotController(8)
-
-    # hit back controller
-    controller_hit = RobotController(8)
-    print(f"Moving paddle to origin... {HOME}")
-    # Move to home position
-    controller.move_to_goal(*HOME)
-
-    # Print target information
-    print(f"\033[94mTargets set to: {TARGET_POINT_1} (odd hits) and {TARGET_POINT_2} (even hits)\033[0m")
-
-    # Subscribe to ball state
-    sub = rospy.Subscriber('/ball_detection/predicted_ball_state', PosVelTimed, callback, queue_size=10)
-    rospy.spin()
+    else:  # If not hittable or not moving, just return the current state
+        return moving, count, hit, hit_counter
