@@ -17,11 +17,11 @@ hit = False
 hit_counter = 0  # Track the number of hits to alternate between targets
 
 # -------------------------------------- Originale ---------------------------------------
-# HOME_POSE = [0, 0, 1]
+HOME_POSE = [0, 0, 1]
 # HOME_ORI = [-0.00060612617037, 0.98890581114, 0.148542219849, 0.000371788566274]
 
 # ----------------------------- Posizione pronta per colpire -----------------------------
-HOME_POSE = [-0.000, -0.156, 1.232]
+# HOME_POSE = [-0.000, -0.156, 1.232]
 roll, pitch, yaw = -2.842, -0.018, -3.093
 HOME_ORI = list(quaternion_from_euler(roll, pitch, yaw))
 

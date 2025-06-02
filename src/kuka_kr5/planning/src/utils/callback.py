@@ -27,20 +27,6 @@ def callback_controller(msg, controller, controller_hit, HOME, moving, count, hi
         # Ball position and velocity
         ball_pos = [msg.pos.x, msg.pos.y, msg.pos.z]
         ball_vel = [msg.vel.x, msg.vel.y, msg.vel.z]
-        real_ball_pos = [0, -0.15, 1.23]
-        real_ball_vel = [0.0, 3.25, 2.18]
-        error_pos = np.array(ball_pos) - np.array(real_ball_pos)
-        error_pos_scalar = np.linalg.norm(error_pos)
-        error_vel = np.array(ball_vel) - np.array(real_ball_vel)
-        error_vel_scalar = np.linalg.norm(error_vel)
-
-        # Format position and velocity errors with 3 decimal precision
-        error_pos_str = np.array2string(error_pos, precision=3, separator=',', suppress_small=True)
-        error_vel_str = np.array2string(error_vel, precision=3, separator=',', suppress_small=True)
-
-        # Log ball position and velocity with errors
-        print(f"\033[92mPOS: {ball_pos}\n\t- err: {error_pos_str}\n\t- magn: {error_pos_scalar:.3f}\033[0m")
-        print(f"\033[92mVEL: {ball_vel}\n\t- err: {error_vel_str}\n\t- magn: {error_vel_scalar:.3f}\033[0m")
 
         # Select target based on hit counter (odd/even)
         current_target = TARGET_POINT_1 if hit_counter % 2 == 1 else TARGET_POINT_2

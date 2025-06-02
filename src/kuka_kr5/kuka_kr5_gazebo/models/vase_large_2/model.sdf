@@ -9,7 +9,7 @@
         <geometry>
           <mesh>
             <uri>model://vase_large_2/meshes/vase3_1.dae</uri>
-            <scale>1.5 1.5 1</scale>
+            <scale>1.6 1.6 1</scale>
           </mesh>
         </geometry>
         <!--material>
@@ -39,7 +39,7 @@
         <geometry>
           <mesh>
             <uri>model://vase_large_2/meshes/vase3_1.dae</uri>
-            <scale>1.5 1.5 1</scale>
+            <scale>1.6 1.6 1</scale>
           </mesh>
         </geometry>
       </collision>

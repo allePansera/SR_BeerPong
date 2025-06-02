@@ -45,37 +45,23 @@ def calculate_hit_speed_adv(ball_pos, ball_vel, target_point, euler_angles):
     target_dir = np.array([dx, dy, dz])
     target_dir = target_dir / np.linalg.norm(target_dir)
 
-    # Dot product gives cosine of angle between paddle normal and target direction
-    efficiency_factor = np.dot(paddle_normal, target_dir)
-    efficiency_factor = max(efficiency_factor, 0.2)  # Set minimum efficiency
-
     # Compute adjusted horizontal velocity based on paddle angle
     # base_horizontal_velocity = -0.3  # Base velocity for short distances
     # distance_factor = 3.05  # Velocity increase per meter of distance
-    base_horizontal_velocity = -0.35  # Base velocity for short distances
-    distance_factor = 3.2  # Velocity increase per meter of distance
-    v_horizontal = base_horizontal_velocity + (horizontal_dist * distance_factor)
+    # base_horizontal_velocity = -0.35  # Base velocity for short distances
+    distance_factor = 3.65  # Velocity increase per meter of distance
+    v_horizontal = horizontal_dist * distance_factor
     # v_horizontal = min(v_horizontal, 6.0)  # Cap between 1.0 and 6.0 m/s
-
-    # Adjust horizontal velocity for paddle angle
-    # If paddle is angled poorly, we need more speed to reach the target
-    v_horizontal = v_horizontal / efficiency_factor
 
     # Calculate time of flight
     t_flight = horizontal_dist / v_horizontal
 
     # Calculate vertical velocity needed considering paddle angle
     # Add angle compensation - if paddle has upward angle, reduce vertical velocity
-    angle_compensation = np.sin(roll) * 4.75  # Scale factor for angle effect
     v_vertical = (dz + 0.5 * g * t_flight * t_flight) / t_flight
-    v_vertical = v_vertical - angle_compensation
 
     # Calculate total velocity magnitude needed
-    speed = np.sqrt(v_horizontal**2 + v_vertical**3)
-
-    # Apply paddle angle efficiency to speed
-    # If paddle angle isn't optimal, increase speed to compensate
-    # speed = speed / max(efficiency_factor, 0.5)
+    speed = np.sqrt(v_horizontal**2 + v_vertical**2)
 
     # Scale to controller speed
     velocity_to_speed_factor = 1
@@ -83,7 +69,6 @@ def calculate_hit_speed_adv(ball_pos, ball_vel, target_point, euler_angles):
 
     # Log detailed calculations
     print(f"\033[90mTarget: {target_point}, Distance: {horizontal_dist:.2f}m\033[0m")
-    print(f"\033[90mPaddle normal: {paddle_normal}, Efficiency: {efficiency_factor:.2f}\033[0m")
     best_vel_hor = 10.35 if target_point[1] == -3.5 else 13.45
     best_vel_ver = 3.87 if target_point[1] == -3.5 else 3.95
     print(f"\033[96m\t- Time of flight: {t_flight:.2f}s,\n\t- V-horizontal: {v_horizontal:.2f}m/s ({best_vel_hor}),\n\t- V-vertical: {v_vertical:.2f}m/s ({best_vel_ver})\033[0m")

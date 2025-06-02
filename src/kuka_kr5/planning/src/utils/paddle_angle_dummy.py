@@ -34,66 +34,32 @@ def angle_with_target(x, y, z, vx, vy, vz, vy_out=3.0, target_point=None):
     yaw_max = 20.0/180.0*3.14
     roll_max = 30/180.0*3.14
 
-    if x >= 0:
-        yaw = -yaw_max * abs(x) / (table_width/2) + vx * 0.002
-    else:
-        yaw = yaw_max * abs(x) / (table_width/2) - vx * 0.002
-    # if z >= mid_h:
-    #     roll = roll_max * abs(z-mid_h) / mid_h
-    # else:
-    #     roll = -roll_max * abs(z-mid_h) / mid_h
-
     base_roll = -roll_max * abs(max_height - z) / (max_height - table_height) + vy * 0.02
 
-    # Target-based adjustments
-    # 1. Adjust yaw based on horizontal target position
-    target_adjustment_factor = 0.5  # How much to consider target (0-1)
-
-    # Target is to the left: add negative yaw (turn paddle left)
-    # Target is to the right: add positive yaw (turn paddle right)
-    target_yaw_adjustment = -np.sign(tx - x) * yaw_max * min(abs(tx - x) / (table_width), 1.0) * target_adjustment_factor
-    print("target_yaw_adjustment: ", target_yaw_adjustment)
-
-    # 2. Adjust roll based on target height
+    # Adjust roll based on target height
     target_height_factor = 0.4  # How much to consider height (0-1)
 
     # Target is higher: add negative roll (angle paddle up)
     # Target is lower: add positive roll (angle paddle down)
-    # height_diff_normalized = (tz - z) / (max_height - table_height)
-    # target_roll_adjustment = -np.sign(height_diff_normalized) * roll_max * min(abs(height_diff_normalized), 1.0) * target_height_factor
+    height_diff_normalized = (tz - z) / (max_height - table_height)
+    target_roll_adjustment = -np.sign(height_diff_normalized) * roll_max * min(abs(height_diff_normalized), 1.0) * target_height_factor
 
     # Apply the adjustments
-    yaw = yaw + target_yaw_adjustment
-    roll = base_roll  # + target_roll_adjustment
+    roll = base_roll + target_roll_adjustment
 
     # Ensure we don't exceed limits
-    yaw = np.clip(yaw, -yaw_max, yaw_max)
     roll = np.clip(roll, -roll_max, roll_max)
 
-    print("\033[31mAngle Results: {:.1f}° (roll), {:.1f}° (yaw) | Target: {}\033[0m".format(
-        roll/3.14*180.0, yaw/3.14*180.0, target_point))
+    yaw = -0.01 + (1 * math.pi / 180)
 
     return euler_to_quaternion(-3.14+yaw, 0, roll), [roll, 0, yaw]
 
 
 def angle(x, y, z, vx, vy, vz, vy_out=3.0):
-
-    table_width = 1.525
     table_height = 0.76
     max_height = 1.60 + 0.76
-    yaw_max = 20.0/180.0*3.14
     roll_max = 30/180.0*3.14
-
-    if x >= 0:
-        yaw = -yaw_max * abs(x) / (table_width/2) + vx * 0.002
-    else:
-        yaw = yaw_max * abs(x) / (table_width/2) - vx * 0.002
-    # if z >= mid_h:
-    #     roll = roll_max * abs(z-mid_h) / mid_h
-    # else:
-    #     roll = -roll_max * abs(z-mid_h) / mid_h
     roll = -roll_max * abs(max_height - z) / (max_height - table_height) + vy * 0.02
-
     yaw = -0.01 + (1 * math.pi / 180)
     return euler_to_quaternion(-3.14+yaw, 0, roll), [roll, 0, yaw]
 
