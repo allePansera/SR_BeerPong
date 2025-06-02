@@ -46,12 +46,8 @@ def calculate_hit_speed_adv(ball_pos, ball_vel, target_point, euler_angles):
     target_dir = target_dir / np.linalg.norm(target_dir)
 
     # Compute adjusted horizontal velocity based on paddle angle
-    # base_horizontal_velocity = -0.3  # Base velocity for short distances
-    # distance_factor = 3.05  # Velocity increase per meter of distance
-    # base_horizontal_velocity = -0.35  # Base velocity for short distances
     distance_factor = 3.65  # Velocity increase per meter of distance
     v_horizontal = horizontal_dist * distance_factor
-    # v_horizontal = min(v_horizontal, 6.0)  # Cap between 1.0 and 6.0 m/s
 
     # Calculate time of flight
     t_flight = horizontal_dist / v_horizontal
